@@ -1,7 +1,8 @@
 import Head from 'next/head';
 import config from '../main.config';
 import Components from '../templates/templates.module';
-
+import fs from 'fs';
+import path from 'path';
 export default function Template({ meta, header, sections, footer }) {
   return (
     <div>
@@ -33,7 +34,28 @@ const Footer = ({ id, template, props }) => {
 };
 
 export async function getStaticPaths() {
+  const base_url = 'opensource.maplelabs.com';
   const paths = await getAllPaths(config);
+  const dynamicPaths = paths.map((path) => {
+    return `${base_url}/${path.join('/')}`;
+  });
+  const allPaths = [...dynamicPaths];
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${allPaths
+    .map((url) => {
+      return `<url>
+          <loc>${url}</loc>
+        </url>`;
+    })
+    .join('')}
+</urlset>
+`;
+  fs.writeFileSync(
+    path.join(process.cwd(), `public/sitemap.xml`),
+    sitemap,
+    'utf-8'
+  );
   return {
     // paths: [{ params: { slug: ['temp', 'blogs'] } }],
     paths: paths.map((path) => ({ params: { slug: path } })),
